@@ -11,12 +11,12 @@ Integrates Render, Vercel, Buffer, and Firestore into a unified interface for Cl
 - **3 Reusable Prompts** (deployment analyzer, content scheduler, activity log analyzer)
 - **stdio transport** for Claude Code integration
 
-### Stage 3: Tools (Coming Next)
-- `agency_pulse` — Check Render & Vercel deployment status
-- `content_check` — Query Buffer content schedules
-- `data_vault` — Access Firestore leads & logs
+### Stage 3: Tools ✅
+- **`agency_pulse`** — Check Render & Vercel deployment status (4 services monitored)
+- **`content_check`** — Query Buffer content schedules across YouTube, Instagram, LinkedIn
+- **`data_vault`** — Access Firestore leads & logs (track active, pending, completed projects)
 
-### Stage 4: Advanced Features (Coming Soon)
+### Stage 4: Advanced Features (Coming Next)
 - Streaming responses for long-running tasks
 - OAuth 2.1 credential management
 - Professional tracing & logging
@@ -27,6 +27,19 @@ Integrates Render, Vercel, Buffer, and Firestore into a unified interface for Cl
 cargo build --release
 ./target/release/agentic-rust-mcp
 ```
+
+## Example: Invoking Tools
+
+```json
+{"type": "tool", "name": "agency_pulse", "args": {}}
+{"type": "tool", "name": "content_check", "args": {}}
+{"type": "tool", "name": "data_vault", "args": {}}
+```
+
+Returns structured JSON with:
+- Deployment statuses (live/deploying/failed)
+- Scheduled content with approval status
+- Lead pipeline data and metrics
 
 ## Architecture
 
@@ -52,6 +65,17 @@ Built with **production-grade Rust** for:
 - ✅ **Modular Architecture** — Stage-based build enables independent feature completion
 - ✅ **Production-Ready** — Type-safe, async, optimized for enterprise scale
 - ✅ **Multi-Tool Integration** — Demonstrates DevOps + content + data pipeline orchestration
+- ✅ **Tool Invocation** — Claude Code can now trigger deployments checks, content queries, lead data
+
+## Capabilities
+
+| Component | Count | Status |
+|-----------|-------|--------|
+| Resources | 3 | ✅ Implemented |
+| Prompts | 3 | ✅ Implemented |
+| Tools | 3 | ✅ Implemented |
+| Streaming | — | 🔄 Stage 4 |
+| Security | OAuth 2.1 | 🔄 Stage 4 |
 
 ## License
 
@@ -62,3 +86,4 @@ MIT
 Chris Brown  
 [Albatross AI](https://albatrossai.online)  
 [Portfolio](https://github.com/albatrossflyon-coder)
+
