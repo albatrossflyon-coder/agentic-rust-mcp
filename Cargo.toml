@@ -1,6 +1,6 @@
 [package]
 name = "agentic-rust-mcp"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Chris Brown <chris@albatrossai.online>"]
 description = "Production-grade Rust MCP server for agentic AI pipelines. Integrates Render, Vercel, Buffer, and Firestore."

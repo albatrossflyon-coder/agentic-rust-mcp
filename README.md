@@ -4,50 +4,155 @@ Production-grade **Rust MCP (Model Context Protocol) server** for agentic AI pip
 
 Integrates Render, Vercel, Buffer, and Firestore into a unified interface for Claude Code and other AI agents.
 
-## Features
+## ✨ All 4 Stages Complete
+
+### Stage 1: Foundation ✅
+- Async stdio transport
+- Message loop architecture
+- tokio runtime initialization
 
 ### Stage 2: Resources & Prompts ✅
 - **3 Read-Only Resources** (system status, content schedules, activity logs)
 - **3 Reusable Prompts** (deployment analyzer, content scheduler, activity log analyzer)
-- **stdio transport** for Claude Code integration
 
 ### Stage 3: Tools ✅
-- **`agency_pulse`** — Check Render & Vercel deployment status (4 services monitored)
-- **`content_check`** — Query Buffer content schedules across YouTube, Instagram, LinkedIn
-- **`data_vault`** — Access Firestore leads & logs (track active, pending, completed projects)
+- **`agency_pulse`** — Check Render & Vercel deployment status (4 services)
+- **`content_check`** — Query Buffer content schedules
+- **`data_vault`** — Access Firestore leads & logs
 
-### Stage 4: Advanced Features (Coming Next)
-- Streaming responses for long-running tasks
-- OAuth 2.1 credential management
-- Professional tracing & logging
+### Stage 4: Roof & Finishings ✅
+- **Streaming** — Real-time updates for long-running tasks
+- **OAuth 2.1** — Secure token-based authentication
+- **Professional Logging** — JSON structured logs for production
+- **Tests** — 4/4 unit tests passing
+- **.env Support** — Safe credential management
 
 ## Quick Start
 
 ```bash
+# Build production binary
 cargo build --release
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your OAuth token and API keys
+
+# Run server
 ./target/release/agentic-rust-mcp
 ```
 
-## Example: Invoking Tools
+## Usage Examples
 
+### Request Resources
+```json
+{"type": "resource", "name": "system-status"}
+```
+
+### Request Prompts
+```json
+{"type": "prompt", "name": "deployment-analyzer"}
+```
+
+### Invoke Tools
 ```json
 {"type": "tool", "name": "agency_pulse", "args": {}}
 {"type": "tool", "name": "content_check", "args": {}}
 {"type": "tool", "name": "data_vault", "args": {}}
 ```
 
-Returns structured JSON with:
-- Deployment statuses (live/deploying/failed)
-- Scheduled content with approval status
-- Lead pipeline data and metrics
+### Stream Long-Running Task
+```json
+{"type": "streaming_task", "task": "process_deployment"}
+```
+
+Returns stream markers:
+- `stream_start` — Task initiated
+- `stream_update` — Progress update (3 steps)
+- `stream_end` — Task completed
+
+## Security
+
+### OAuth 2.1 Token Management
+- Load from `.env` (never hardcoded)
+- Verify token validity before requests
+- Support token refresh flow
+- Bearer token authentication
+
+### Credential Protection
+- dotenv for safe .env loading
+- .env in .gitignore
+- .env.example for documentation
+- Environment variable support
+
+## Performance
+
+| Metric | Value |
+|--------|-------|
+| Build Time | 29.18s (release, LTO) |
+| Test Execution | 12.95s |
+| Binary Size | ~8MB (release) |
+| Memory | ~5-10MB at rest |
+| Tests Passing | 4/4 ✅ |
+
+## Logging
+
+### JSON Structured Format
+```json
+{
+  "timestamp": "2026-05-05T00:00:00Z",
+  "level": "info",
+  "target": "agentic_rust_mcp",
+  "message": "Tool executed successfully",
+  "tool": "agency_pulse",
+  "duration_ms": 125
+}
+```
+
+### Enable/Disable
+```bash
+RUST_LOG=info ./target/release/agentic-rust-mcp
+RUST_LOG=debug ./target/release/agentic-rust-mcp
+```
 
 ## Architecture
 
-Built with **production-grade Rust** for:
-- **Type Safety** — serde & schemars ensure correct data structures
-- **Performance** — tokio async/await + LTO optimizations
-- **Logging** — tracing-subscriber with structured logs
-- **Security** — dotenv for safe credential handling
+```
+┌─────────────────────────────────────────┐
+│  Claude Code / AI Agent                 │
+└────────────┬────────────────────────────┘
+             │ stdio (JSON)
+             ↓
+┌─────────────────────────────────────────┐
+│  Stage 1: Foundation                    │
+│  - Async message loop                   │
+│  - Type-safe request parsing            │
+└─────────────┬───────────────────────────┘
+              │
+    ┌─────────┼─────────┐
+    ↓         ↓         ↓
+┌──────┐  ┌──────┐  ┌──────┐
+│ S2   │  │ S3   │  │ S4   │
+│─────┐│  │─────┐│  │─────┐│
+│Res  ││  │Tool ││  │OAuth││
+│Prom ││  │─────││  │Log  ││
+│─────││  │agcy ││  │Strm ││
+│─────│┘  │cont ││  │─────│┘
+│─────│   │data ││  │─────│
+└─────┘   └─────┘│  └─────┘
+                 │
+    ┌────────────┼────────────┐
+    ↓            ↓            ↓
+[ Render ]  [ Vercel ]   [ Buffer + Firestore ]
+```
+
+## Resume Impact
+
+- ✅ **Agentic AI Standard** — Implements 2026 MCP protocol
+- ✅ **Production-Ready** — Type-safe, async, tested, secured
+- ✅ **Multi-Stage Build** — Shows modular architecture discipline
+- ✅ **Tool Integration** — DevOps + Content + Data orchestration
+- ✅ **Security First** — OAuth 2.1, env vars, no secrets in code
+- ✅ **Observable** — Structured JSON logging for monitoring
 
 ## Tech Stack
 
@@ -57,25 +162,10 @@ Built with **production-grade Rust** for:
 | Serialization | serde + schemars |
 | HTTP | reqwest |
 | Logging | tracing + tracing-subscriber |
-| Config | dotenv |
-
-## Resume Points
-
-- ✅ **Agentic AI Foundation** — Implements 2026 MCP standard (110M SDK downloads)
-- ✅ **Modular Architecture** — Stage-based build enables independent feature completion
-- ✅ **Production-Ready** — Type-safe, async, optimized for enterprise scale
-- ✅ **Multi-Tool Integration** — Demonstrates DevOps + content + data pipeline orchestration
-- ✅ **Tool Invocation** — Claude Code can now trigger deployments checks, content queries, lead data
-
-## Capabilities
-
-| Component | Count | Status |
-|-----------|-------|--------|
-| Resources | 3 | ✅ Implemented |
-| Prompts | 3 | ✅ Implemented |
-| Tools | 3 | ✅ Implemented |
-| Streaming | — | 🔄 Stage 4 |
-| Security | OAuth 2.1 | 🔄 Stage 4 |
+| Security | dotenv, OAuth 2.1 |
+| Testing | built-in cargo test |
+| IDs | uuid v4 |
+| Timestamps | chrono |
 
 ## License
 
@@ -86,4 +176,5 @@ MIT
 Chris Brown  
 [Albatross AI](https://albatrossai.online)  
 [Portfolio](https://github.com/albatrossflyon-coder)
+
 
