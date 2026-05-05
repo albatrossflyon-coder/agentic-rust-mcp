@@ -1,0 +1,37 @@
+[package]
+name = "agentic-rust-mcp"
+version = "0.2.0"
+edition = "2021"
+authors = ["Chris Brown <chris@albatrossai.online>"]
+description = "Production-grade Rust MCP server for agentic AI pipelines. Integrates Render, Vercel, Buffer, and Firestore."
+repository = "https://github.com/albatrossflyon-coder/agentic-rust-mcp"
+license = "MIT"
+
+[dependencies]
+# MCP - Using rust-mcp-sdk (the official Rust SDK)
+mcp = "0.1.1"
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+schemars = { version = "0.8", features = ["derive"] }
+
+# HTTP Client (for Render, Vercel, Buffer, Firestore)
+reqwest = { version = "0.11", features = ["json"] }
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Environment & Config
+dotenv = "0.15"
+anyhow = "1.0"
+
+# UUID for resource IDs
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# Time & Timestamps
+chrono = { version = "0.4", features = ["serde"] }
+
+[profile.release]
+opt-level = 3
+lto = true
