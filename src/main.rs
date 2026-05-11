@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::time::Duration;
 use tokio::io::{stdin, stdout, AsyncBufReadExt, BufReader, AsyncWriteExt};
 use tracing::{info, warn, error};
 use chrono::Local;
@@ -145,7 +146,9 @@ pub async fn agency_pulse() -> Result<DeploymentStatus> {
 }
 
 async fn query_render_services(api_key: &str) -> Result<Vec<RenderService>> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
     let resp = client
         .get("https://api.render.com/v1/services")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -159,7 +162,9 @@ async fn query_render_services(api_key: &str) -> Result<Vec<RenderService>> {
 }
 
 async fn query_vercel_deployments(token: &str) -> Result<Vec<VercelDeployment>> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
     let resp = client
         .get("https://api.vercel.com/v9/deployments")
         .header("Authorization", format!("Bearer {}", token))
@@ -206,9 +211,12 @@ pub async fn content_check() -> Result<BufferPost> {
 }
 
 async fn query_buffer_profiles(token: &str) -> Result<Vec<BufferProfile>> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
     let resp = client
-        .get(format!("https://api.bufferapp.com/1/profiles.json?access_token={}", token))
+        .get("https://api.bufferapp.com/1/profiles.json")
+        .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
     
@@ -217,12 +225,15 @@ async fn query_buffer_profiles(token: &str) -> Result<Vec<BufferProfile>> {
 }
 
 async fn query_buffer_schedule(token: &str, profile_id: &str) -> Result<Vec<BufferUpdate>> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
     let resp = client
         .get(format!(
-            "https://api.bufferapp.com/1/profiles/{}/schedules.json?access_token={}",
-            profile_id, token
+            "https://api.bufferapp.com/1/profiles/{}/schedules.json",
+            profile_id
         ))
+        .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
     
@@ -251,13 +262,19 @@ pub async fn data_vault() -> Result<Vec<FirestoreLead>> {
 }
 
 async fn query_firestore(project_id: &str, api_key: &str, collection: &str) -> Result<Vec<FirestoreLead>> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
     let url = format!(
-        "https://firestore.googleapis.com/v1/projects/{}/databases/(default)/documents/{}?key={}",
-        project_id, collection, api_key
+        "https://firestore.googleapis.com/v1/projects/{}/databases/(default)/documents/{}",
+        project_id, collection
     );
-    
-    let resp = client.get(&url).send().await?;
+
+    let resp = client
+        .get(&url)
+        .header("x-goog-api-key", api_key)
+        .send()
+        .await?;
     
     let body: Value = resp.json().await?;
     let mut leads = Vec::new();
