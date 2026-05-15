@@ -1,1 +1,4 @@
 /target
+credentials.json
+token.json
+.env
