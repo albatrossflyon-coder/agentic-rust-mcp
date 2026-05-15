@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::io::{stdin, stdout, AsyncBufReadExt, BufReader, AsyncWriteExt};
 use tracing::{info, warn, error};
 use chrono::Local;
+use agentic_rust_mcp::gmail_sender;
 
 // ============================================================================
 // DATA STRUCTURES
@@ -391,6 +392,28 @@ async fn handle_request(req: JsonRpcRequest) -> JsonRpcResponse {
                                 "properties": {},
                                 "required": []
                             }
+                        },
+                        {
+                            "name": "send_gmail",
+                            "description": "Send an email via Gmail SMTP",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "to": {
+                                        "type": "string",
+                                        "description": "Recipient email address"
+                                    },
+                                    "subject": {
+                                        "type": "string",
+                                        "description": "Email subject line"
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "description": "Plain text email body"
+                                    }
+                                },
+                                "required": ["to", "subject", "body"]
+                            }
                         }
                     ]
                 })),
@@ -471,6 +494,64 @@ async fn handle_request(req: JsonRpcRequest) -> JsonRpcResponse {
                         }
                     }
                 }
+                Some("send_gmail") => {
+                    info!("📧 Calling send_gmail");
+                    let to = req.params.as_ref()
+                        .and_then(|p| p.get("arguments"))
+                        .and_then(|a| a.get("to"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let subject = req.params.as_ref()
+                        .and_then(|p| p.get("arguments"))
+                        .and_then(|a| a.get("subject"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("(no subject)")
+                        .to_string();
+                    let body_text = req.params.as_ref()
+                        .and_then(|p| p.get("arguments"))
+                        .and_then(|a| a.get("body"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+
+                    if to.is_empty() {
+                        JsonRpcResponse {
+                            jsonrpc: "2.0".to_string(),
+                            id: req.id,
+                            result: None,
+                            error: Some(JsonRpcError {
+                                code: -32602,
+                                message: "Missing required parameter: to".to_string(),
+                            }),
+                        }
+                    } else {
+                        match gmail_sender::send_email(&to, &subject, &body_text).await {
+                            Ok(()) => JsonRpcResponse {
+                                jsonrpc: "2.0".to_string(),
+                                id: req.id,
+                                result: Some(json!({
+                                    "success": true,
+                                    "to": to,
+                                    "subject": subject
+                                })),
+                                error: None,
+                            },
+                            Err(e) => {
+                                error!("send_gmail failed: {}", e);
+                                JsonRpcResponse {
+                                    jsonrpc: "2.0".to_string(),
+                                    id: req.id,
+                                    result: None,
+                                    error: Some(JsonRpcError {
+                                        code: -32603,
+                                        message: format!("Email send failed: {}", e),
+                                    }),
+                                }
+                            }
+                        }
+                    }
+                }
                 _ => {
                     warn!("Unknown tool: {:?}", tool_name);
                     JsonRpcResponse {
@@ -517,7 +598,7 @@ async fn main() -> Result<()> {
 
     info!("🏗️ Agentic Rust MCP Server starting (v0.4.0)");
     info!("📡 MCP JSON-RPC 2.0 over stdio");
-    info!("🔧 Tools: agency_pulse, content_check, data_vault");
+    info!("🔧 Tools: agency_pulse, content_check, data_vault, send_gmail");
 
     dotenv::dotenv().ok();
     
@@ -545,6 +626,16 @@ async fn main() -> Result<()> {
         info!("✅ FIREBASE_API_KEY loaded");
     } else {
         warn!("⚠️  FIREBASE_API_KEY not found");
+    }
+    if std::env::var("GMAIL_USER").is_ok() {
+        info!("✅ GMAIL_USER loaded");
+    } else {
+        warn!("⚠️  GMAIL_USER not found — send_gmail will fail");
+    }
+    if std::env::var("GMAIL_APP_PASSWORD").is_ok() {
+        info!("✅ GMAIL_APP_PASSWORD loaded");
+    } else {
+        warn!("⚠️  GMAIL_APP_PASSWORD not found — send_gmail will fail");
     }
 
     let stdin = stdin();
