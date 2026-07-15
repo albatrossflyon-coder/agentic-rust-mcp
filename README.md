@@ -145,6 +145,8 @@ RUST_LOG=debug ./target/release/agentic-rust-mcp
 [ Render ]  [ Vercel ]   [ Buffer + Firestore ]
 ```
 
+This server is the final layer in a larger, multi-project memory architecture spanning research (NotebookLM), session state (OB1 + Supabase), and a RAG engine — see [docs/memory-architecture.md](docs/memory-architecture.md) for the full picture.
+
 ## Resume Impact
 
 - ✅ **Agentic AI Standard** — Implements 2026 MCP protocol
