@@ -175,6 +175,6 @@ MIT
 
 Chris Brown  
 [Albatross AI](https://albatrossai.online)  
-[Portfolio](https://github.com/albatrossflyon-coder)
+[Portfolio](https://chrisbrown-dev.vercel.app)
 
 
