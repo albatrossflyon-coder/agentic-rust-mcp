@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:CE422B,100:F74C00&height=250&section=header&text=Agentic%20Rust%20MCP&fontSize=75&fontColor=1a1a1a&fontFamily=IBM%20Plex%20Mono&animation=fadeIn&fontAlignY=35&desc=Production-grade%20Rust%20MCP%20server%20for%20agentic%20AI%20pipelines&descAlignY=58&descSize=20&descColor=1a1a1a" alt="Agentic Rust MCP" width="100%"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:CE422B,100:F74C00&height=250&section=header&text=Agentic%20Rust%20MCP&fontSize=75&fontColor=1a1a1a&animation=fadeIn&fontAlignY=35&desc=Production-grade%20Rust%20MCP%20server%20for%20agentic%20AI%20pipelines&descAlignY=58&descSize=20&descColor=1a1a1a" alt="Agentic Rust MCP" width="100%"/>
 </p>
 
 Integrates Render, Vercel, Buffer, and Firestore into a unified interface for Claude Code and other AI agents.
