@@ -1,10 +1,12 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:CE422B,100:F74C00&height=200&section=header&text=Agentic%20Rust%20MCP&fontSize=65&fontColor=1a1a1a&animation=fadeIn&fontAlignY=35&desc=A%20Rust%20MCP%20server%20with%20a%20public%2C%20test-driveable%20web%20demo&descAlignY=58&descSize=18&descColor=1a1a1a" alt="Agentic Rust MCP" width="100%"/>
+  <img src="docs/images/demo-hero.png" alt="agentic-rust-mcp live demo — a black-and-green terminal-style landing page with an orbiting-node hero visual" width="100%"/>
 </p>
 
-An MCP (Model Context Protocol) server written in Rust, hand-rolled over JSON-RPC 2.0/stdio. It exposes 4 tools that call real external APIs (Render, Vercel, Buffer, Firestore, Gmail), plus a separate public HTTP demo so anyone can try it from a browser without running an MCP client.
+<p align="center">
+  <a href="https://agentic-rust-mcp-demo.onrender.com"><strong>▶ Live Demo</strong></a> — click any tool button, no signup, no real accounts touched
+</p>
 
-**Live demo:** https://agentic-rust-mcp-demo.onrender.com (runs against fixture data, not real accounts — see [Demo Mode](#demo-mode) below)
+An MCP (Model Context Protocol) server written in Rust, hand-rolled over JSON-RPC 2.0/stdio. It exposes 4 tools that call real external APIs (Render, Vercel, Buffer, Firestore, Gmail), plus the public HTTP demo above so anyone can try it from a browser without running an MCP client.
 
 ## Tools
 

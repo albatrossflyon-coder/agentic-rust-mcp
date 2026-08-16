@@ -21,6 +21,14 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
 
+## 2026-08-16 (TIC 1) — Registration + README hero, stage 5
+
+**Registered as a live MCP server:** built a release binary (`cargo build --release`), added `agentic-rust-mcp` to `~/.claude.json`'s global `mcpServers` block (`command` points at the release exe directly, `env` carries `GMAIL_USER`/`GMAIL_APP_PASSWORD`/`RENDER_API_KEY` — the 3 real credentials so far). Smoke-tested with the exact env the config passes: `initialize` handshake succeeded, and `agency_pulse` made a **real** call to the live Render API and got back `"status":"deploying"` — genuine data, not a fixture. Needs a Claude Code restart to actually load (config changes aren't picked up mid-session, same as every other custom MCP server here).
+
+**README hero:** replaced the generic decorative capsule-render banner with a real screenshot of the live deployed demo page (`docs/images/demo-hero.png`), plus a prominent Live Demo link/button right under it.
+
+**Open:** Vercel/Buffer keys still needed for `agency_pulse`'s Vercel half and all of `content_check` to go live (Chris's to get). Firebase-vs-Supabase for `data_vault`'s real backend is an open question — not yet decided.
+
 ## 2026-08-16 (TIC 1) — Visual redesign, stage 4
 
 **What shipped:** Rebuilt `static/index.html` from a plain functional page into a real designed surface, referenced against morphllm.com per Chris's brief (black ground, lime-green accent, dot-matrix "Silkscreen" display font, pill buttons, orbiting-node hero visual). Added a signature interaction: the hero orbit runs slow and green at idle, and accelerates + flares Rust-orange (`#CE422B`→`#F74C00`, the actual Rust-lang logo colors) the instant a tool is called, relaxing back to green when the response lands — dramatizing "Rust is fast" through motion tied to a real network call, not decoration. Added an explainer section (3 numbered cards: register it / agent calls a tool / real APIs real answer) after Chris flagged the page jumped straight to buttons with zero context for a first-time visitor.
