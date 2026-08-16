@@ -21,6 +21,14 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
 
+## 2026-08-16 (TIC 1) — Docs accuracy pass, stage 3
+
+**What shipped:** Rewrote `README.md` — it previously claimed OAuth 2.1, 3 MCP resources, 3 reusable prompts, and a streaming task type, none of which exist anywhere in the source (confirmed via grep: zero matches for any of it). It also had a fabricated-looking performance table with suspiciously precise numbers never actually measured. Removed all of it; README now describes the real 4 tools, the real two-entry-point architecture (stdio + web demo), and links the live Render demo. Also fixed `docs/rust-mcp-integration.md` (part of the broader RAG-memory-architecture doc set), which had the same "OAuth/Logging complete" claim and described a never-built Gmail-API-draft-generation plan as "in progress" — corrected to describe what's actually shipped (direct SMTP send via `lettre`), confirmed as the intended design going forward, not an unfinished stand-in. Added the missing `GMAIL_USER`/`GMAIL_APP_PASSWORD`/`DEMO_MODE` entries to `.env.example`, which didn't have them despite both being required for real functionality.
+
+**Why this mattered beyond tidiness:** the README's false claims were independently confirmed to actively mislead an external reviewer (ChatGPT, asked to review this repo for portfolio purposes, reported "OAuth 2.1", "Resources + prompts + tools", and "Streaming/long-running tasks" as things it observed in the repo — all of it lifted from the README's own overclaiming rather than the actual source, which it hadn't read yet). A dishonest README is worse than a modest one for exactly this reason.
+
+**Not code:** no rebuild/retest/security-scan needed for this pass — docs-only change.
+
 ## 2026-08-16 (TIC 1) — Public web demo, stage 2
 
 **What shipped:** Removed the other 2 unused dependencies (`schemars`, `uuid` — confirmed zero references anywhere in `src/`). Added `configuration_error` as a distinct `agency_pulse` status (previously a missing `RENDER_API_KEY`/`VERCEL_TOKEN` was indistinguishable from a genuine "deploying" state). Unified `send_gmail`'s request parsing into one shared typed `SendGmailRequest` struct (`src/tools.rs`), used by both `main.rs` (stdio JSON-RPC) and `web_server.rs` (HTTP) instead of each having its own untyped/duplicated parsing.

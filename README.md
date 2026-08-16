@@ -1,114 +1,66 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:CE422B,100:F74C00&height=250&section=header&text=Agentic%20Rust%20MCP&fontSize=75&fontColor=1a1a1a&animation=fadeIn&fontAlignY=35&desc=Production-grade%20Rust%20MCP%20server%20for%20agentic%20AI%20pipelines&descAlignY=58&descSize=20&descColor=1a1a1a" alt="Agentic Rust MCP" width="100%"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:CE422B,100:F74C00&height=200&section=header&text=Agentic%20Rust%20MCP&fontSize=65&fontColor=1a1a1a&animation=fadeIn&fontAlignY=35&desc=A%20Rust%20MCP%20server%20with%20a%20public%2C%20test-driveable%20web%20demo&descAlignY=58&descSize=18&descColor=1a1a1a" alt="Agentic Rust MCP" width="100%"/>
 </p>
 
-Integrates Render, Vercel, Buffer, and Firestore into a unified interface for Claude Code and other AI agents.
+An MCP (Model Context Protocol) server written in Rust, hand-rolled over JSON-RPC 2.0/stdio. It exposes 4 tools that call real external APIs (Render, Vercel, Buffer, Firestore, Gmail), plus a separate public HTTP demo so anyone can try it from a browser without running an MCP client.
 
-## ✨ All 4 Stages Complete
+**Live demo:** https://agentic-rust-mcp-demo.onrender.com (runs against fixture data, not real accounts — see [Demo Mode](#demo-mode) below)
 
-### Stage 1: Foundation ✅
-- Async stdio transport
-- Message loop architecture
-- tokio runtime initialization
+## Tools
 
-### Stage 2: Resources & Prompts ✅
-- **3 Read-Only Resources** (system status, content schedules, activity logs)
-- **3 Reusable Prompts** (deployment analyzer, content scheduler, activity log analyzer)
+| Tool | What it does |
+|------|--------------|
+| `agency_pulse` | Polls Render + Vercel and returns a rolled-up deployment status |
+| `content_check` | Polls Buffer for scheduled posts across social profiles |
+| `data_vault` | Queries a Firestore `leads` collection |
+| `send_gmail` | Sends an email via Gmail SMTP (`to`, `subject`, `body`) |
 
-### Stage 3: Tools ✅
-- **`agency_pulse`** — Check Render & Vercel deployment status (4 services)
-- **`content_check`** — Query Buffer content schedules
-- **`data_vault`** — Access Firestore leads & logs
+Each tool degrades gracefully when its API key isn't configured — it reports an empty/`configuration_error` state instead of crashing.
 
-### Stage 4: Roof & Finishings ✅
-- **Streaming** — Real-time updates for long-running tasks
-- **OAuth 2.1** — Secure token-based authentication
-- **Professional Logging** — JSON structured logs for production
-- **Tests** — 4/4 unit tests passing
-- **.env Support** — Safe credential management
+## Two entry points, one shared implementation
+
+- **`src/main.rs`** — the MCP server. JSON-RPC 2.0 over stdin/stdout, for real MCP clients (Claude Desktop/Code) with real credentials in `.env`.
+- **`src/bin/web_server.rs`** — the public web demo. An Axum HTTP server exposing the same 4 tools as `POST /api/*`, plus a static page at `/`. **Refuses to start unless `DEMO_MODE=true`** — this binary has no auth, so it must never be able to reach real accounts.
+
+Both call the same tool implementations in `src/tools.rs` — nothing is duplicated between them.
+
+## Demo Mode
+
+Set `DEMO_MODE=true` and every tool returns realistic fixture data instead of calling a real account. `send_gmail` in demo mode simulates a send and never actually delivers mail. This is what the public deployment runs — no real credentials are set on that Render service at all.
 
 ## Quick Start
 
 ```bash
-# Build production binary
+# Build both binaries
 cargo build --release
 
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your OAuth token and API keys
-
-# Run server
+# Run the stdio MCP server (for a real MCP client, with real .env credentials)
+cp .env.example .env   # fill in whichever keys you have
 ./target/release/agentic-rust-mcp
+
+# Run the web demo locally
+DEMO_MODE=true PORT=8080 ./target/release/web_server
 ```
 
-## Usage Examples
+## MCP Protocol Usage
 
-### Request Resources
 ```json
-{"type": "resource", "name": "system-status"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
+{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "agency_pulse", "arguments": {}}}
+{"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "send_gmail", "arguments": {"to": "x@example.com", "subject": "hi", "body": "hello"}}}
 ```
-
-### Request Prompts
-```json
-{"type": "prompt", "name": "deployment-analyzer"}
-```
-
-### Invoke Tools
-```json
-{"type": "tool", "name": "agency_pulse", "args": {}}
-{"type": "tool", "name": "content_check", "args": {}}
-{"type": "tool", "name": "data_vault", "args": {}}
-```
-
-### Stream Long-Running Task
-```json
-{"type": "streaming_task", "task": "process_deployment"}
-```
-
-Returns stream markers:
-- `stream_start` — Task initiated
-- `stream_update` — Progress update (3 steps)
-- `stream_end` — Task completed
 
 ## Security
 
-### OAuth 2.1 Token Management
-- Load from `.env` (never hardcoded)
-- Verify token validity before requests
-- Support token refresh flow
-- Bearer token authentication
-
-### Credential Protection
-- dotenv for safe .env loading
-- .env in .gitignore
-- .env.example for documentation
-- Environment variable support
-
-## Performance
-
-| Metric | Value |
-|--------|-------|
-| Build Time | 29.18s (release, LTO) |
-| Test Execution | 12.95s |
-| Binary Size | ~8MB (release) |
-| Memory | ~5-10MB at rest |
-| Tests Passing | 4/4 ✅ |
+- Credentials load from `.env` (gitignored) via `dotenv` — nothing hardcoded.
+- The public web demo can never reach real accounts: it hard-exits at startup unless `DEMO_MODE=true`, and no real keys are ever set on that deployment.
+- No authentication layer exists on the web demo's API routes — it's read-only fixture data by design, not a production API surface.
 
 ## Logging
 
-### JSON Structured Format
-```json
-{
-  "timestamp": "2026-05-05T00:00:00Z",
-  "level": "info",
-  "target": "agentic_rust_mcp",
-  "message": "Tool executed successfully",
-  "tool": "agency_pulse",
-  "duration_ms": 125
-}
-```
+Structured JSON logs via `tracing`:
 
-### Enable/Disable
 ```bash
 RUST_LOG=info ./target/release/agentic-rust-mcp
 RUST_LOG=debug ./target/release/agentic-rust-mcp
@@ -117,57 +69,36 @@ RUST_LOG=debug ./target/release/agentic-rust-mcp
 ## Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│  Claude Code / AI Agent                 │
-└────────────┬────────────────────────────┘
-             │ stdio (JSON)
-             ↓
-┌─────────────────────────────────────────┐
-│  Stage 1: Foundation                    │
-│  - Async message loop                   │
-│  - Type-safe request parsing            │
-└─────────────┬───────────────────────────┘
-              │
-    ┌─────────┼─────────┐
-    ↓         ↓         ↓
-┌──────┐  ┌──────┐  ┌──────┐
-│ S2   │  │ S3   │  │ S4   │
-│─────┐│  │─────┐│  │─────┐│
-│Res  ││  │Tool ││  │OAuth││
-│Prom ││  │─────││  │Log  ││
-│─────││  │agcy ││  │Strm ││
-│─────│┘  │cont ││  │─────│┘
-│─────│   │data ││  │─────│
-└─────┘   └─────┘│  └─────┘
-                 │
-    ┌────────────┼────────────┐
-    ↓            ↓            ↓
-[ Render ]  [ Vercel ]   [ Buffer + Firestore ]
+   MCP client (stdio)         Browser (public demo)
+          │                            │
+          ▼                            ▼
+   src/main.rs                 src/bin/web_server.rs
+   (JSON-RPC 2.0)               (Axum, DEMO_MODE-gated)
+          │                            │
+          └──────────────┬─────────────┘
+                          ▼
+                    src/tools.rs
+        (agency_pulse, content_check,
+          data_vault, send_gmail)
+                          │
+        ┌────────┬────────┬────────┬────────┐
+        ▼        ▼        ▼        ▼        ▼
+    Render    Vercel    Buffer  Firestore  Gmail
 ```
-
-This server is the final layer in a larger, multi-project memory architecture spanning research (NotebookLM), session state (OB1 + Supabase), and a RAG engine — see [docs/memory-architecture.md](docs/memory-architecture.md) for the full picture.
-
-## Resume Impact
-
-- ✅ **Agentic AI Standard** — Implements 2026 MCP protocol
-- ✅ **Production-Ready** — Type-safe, async, tested, secured
-- ✅ **Multi-Stage Build** — Shows modular architecture discipline
-- ✅ **Tool Integration** — DevOps + Content + Data orchestration
-- ✅ **Security First** — OAuth 2.1, env vars, no secrets in code
-- ✅ **Observable** — Structured JSON logging for monitoring
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Runtime | tokio (async/await) |
-| Serialization | serde + schemars |
-| HTTP | reqwest |
+| Web server | axum |
+| Serialization | serde / serde_json |
+| HTTP client | reqwest |
 | Logging | tracing + tracing-subscriber |
-| Security | dotenv, OAuth 2.1 |
-| Testing | built-in cargo test |
-| IDs | uuid v4 |
+| Config | dotenv |
+| Email | lettre |
 | Timestamps | chrono |
+| Testing | built-in `cargo test` |
 
 ## License
 
@@ -175,8 +106,6 @@ MIT
 
 ## Author
 
-Chris Brown  
-[Albatross AI](https://albatrossai.online)  
+Chris Brown
+[Albatross AI](https://albatrossai.online)
 [Portfolio](https://chrisbrown-dev.vercel.app)
-
-
