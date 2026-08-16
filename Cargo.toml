@@ -11,7 +11,6 @@ license = "MIT"
 tokio = { version = "1.35", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-schemars = { version = "0.8", features = ["derive"] }
 
 # HTTP Client (for Render, Vercel, Buffer, Firestore)
 reqwest = { version = "0.12", features = ["json"] }
@@ -26,9 +25,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Environment & Config
 dotenv = "0.15"
 anyhow = "1.0"
-
-# UUID for resource IDs
-uuid = { version = "1.0", features = ["v4", "serde"] }
 
 # Time & Timestamps
 chrono = { version = "0.4", features = ["serde"] }

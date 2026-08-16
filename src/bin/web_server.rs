@@ -5,23 +5,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use serde::Deserialize;
 use serde_json::json;
 use tracing::info;
 
-use agentic_rust_mcp::tools::{agency_pulse, content_check, data_vault, send_gmail_tool};
+use agentic_rust_mcp::tools::{agency_pulse, content_check, data_vault, send_gmail_tool, SendGmailRequest};
 
 const INDEX_HTML: &str = include_str!("../../static/index.html");
-
-#[derive(Debug, Deserialize)]
-struct SendGmailRequest {
-    #[serde(default)]
-    to: String,
-    #[serde(default)]
-    subject: String,
-    #[serde(default)]
-    body: String,
-}
 
 async fn index() -> impl IntoResponse {
     ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], INDEX_HTML)

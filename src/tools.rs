@@ -42,6 +42,24 @@ pub struct GmailSendResult {
     pub demo_mode: bool,
 }
 
+// Shared send_gmail request shape, used by both the stdio MCP server
+// (main.rs, parsed from JSON-RPC "arguments") and the web demo
+// (web_server.rs, parsed from a POST body) — one typed contract instead of
+// two independent raw-JSON/struct definitions for the same tool call.
+#[derive(Debug, Deserialize)]
+pub struct SendGmailRequest {
+    #[serde(default)]
+    pub to: String,
+    #[serde(default = "default_gmail_subject")]
+    pub subject: String,
+    #[serde(default)]
+    pub body: String,
+}
+
+fn default_gmail_subject() -> String {
+    "(no subject)".to_string()
+}
+
 // Render API response
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RenderService {
@@ -160,6 +178,12 @@ pub async fn agency_pulse() -> Result<DeploymentStatus> {
         "live".to_string()
     } else if render_status == "failed" || vercel_status == "failed" {
         "failed".to_string()
+    } else if render_key.is_empty() && vercel_token.is_empty() {
+        // ponytail: neither key is set, so this isn't "deploying" — nothing
+        // was ever configured to check. DeploymentStatus has one flat status
+        // field; a real per-provider (render vs vercel) breakdown would need
+        // a wire-format change, out of scope for this pass.
+        "configuration_error".to_string()
     } else {
         "deploying".to_string()
     };

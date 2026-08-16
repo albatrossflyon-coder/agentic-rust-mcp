@@ -17,8 +17,23 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 ## Status
 - GitHub: github.com/albatrossflyon-coder/agentic-rust-mcp
 - Local: C:\Repos\agentic-rust-mcp
-- Phase: stdio MCP server working as before; public web demo (stage 1) built, security-scanned, code-reviewed, and locally verified — not yet deployed to Render.
+- Live demo: https://agentic-rust-mcp-demo.onrender.com (Render, free tier, `DEMO_MODE=true`, no real credentials on that service)
+- Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
+
+## 2026-08-16 (TIC 1) — Public web demo, stage 2
+
+**What shipped:** Removed the other 2 unused dependencies (`schemars`, `uuid` — confirmed zero references anywhere in `src/`). Added `configuration_error` as a distinct `agency_pulse` status (previously a missing `RENDER_API_KEY`/`VERCEL_TOKEN` was indistinguishable from a genuine "deploying" state). Unified `send_gmail`'s request parsing into one shared typed `SendGmailRequest` struct (`src/tools.rs`), used by both `main.rs` (stdio JSON-RPC) and `web_server.rs` (HTTP) instead of each having its own untyped/duplicated parsing.
+
+**Security scan:** clean, 0 findings, after this batch and again after the fix below.
+
+**Code review (correctness):** found a real regression from the `send_gmail` typing change — consolidating three independent field parses into one atomic `serde_json::from_value(...).ok()` meant a type error on `subject` or `body` alone (e.g. `subject` sent as a number) discarded a validly-supplied `to` too, producing a misleading "Missing required parameter: to" error instead of reporting what was actually wrong. Fixed: malformed arguments now return their own `"Invalid arguments: <reason>"` error, distinct from a genuinely missing `to`. Verified both cases directly against the built binary — confirmed the exact regression scenario the review named, and confirmed it's fixed.
+
+**Tests:** 5/5 passing. Live-verified: `DEMO_MODE=false` still hard-exits with the fatal message and no lingering process; `DEMO_MODE=true` serves normally; malformed `subject` and genuinely-missing `to` now report distinct, accurate errors on the stdio path.
+
+**Deployed:** new Render web service `agentic-rust-mcp-demo` (free tier, Oregon, Rust native runtime, `DEMO_MODE=true`, no other secrets set). Real gotcha hit during deploy: changing the service's `health-check-path` via the Render CLI while its just-triggered initial deploy was still in flight hung that deploy for ~14 minutes before it timed out; a second deploy that started after the config had settled went live normally in ~2.5 minutes. Logged in `start-to-finish`'s `LEARNINGS.md` for next time. Verified live via curl: `/health`, `/`, and `/api/agency_pulse` all responding correctly from the actual deployed URL.
+
+**Not done yet:** README accuracy pass (still describes itself as "production-grade" and lists a non-existent "streaming" stage in older copies); `content_check`/`data_vault` don't yet have the same configuration-error-vs-empty distinction as `agency_pulse` — deferred because it requires an additive wire-format change (wrapping `data_vault`'s bare array in an object) that's a judgment call, not flagged as decided.
 
 ## 2026-08-16 (TIC 1) — Public web demo, stage 1
 
@@ -35,6 +50,8 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 **Not done yet:** deploy to Render, BUILDLOG entry for the deploy itself once live, stage 2 items (typed request/response contracts, dead-dependency cleanup for `schemars`/`uuid`, README accuracy pass).
 
 ## Pending
-- [ ] Deploy `web_server` to Render with `DEMO_MODE=true` and no other secrets set on that service
+- [x] Deploy `web_server` to Render with `DEMO_MODE=true` and no other secrets set on that service — live at https://agentic-rust-mcp-demo.onrender.com
+- [ ] README accuracy pass
+- [ ] `content_check`/`data_vault` configuration-error distinction (needs a wire-format decision — see stage 2 entry)
 - [ ] Wire into Omni Dashboard as a status panel
 - [ ] Confirm all 4 stages functional end-to-end against real accounts (stdio path)

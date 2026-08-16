@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::io::{stdin, stdout, AsyncBufReadExt, BufReader, AsyncWriteExt};
 use tracing::{info, warn, error};
-use agentic_rust_mcp::tools::{agency_pulse, content_check, data_vault, send_gmail_tool};
+use agentic_rust_mcp::tools::{agency_pulse, content_check, data_vault, send_gmail_tool, SendGmailRequest};
 
 // ============================================================================
 // MCP JSON-RPC 2.0 PROTOCOL
@@ -190,27 +190,22 @@ async fn handle_request(req: JsonRpcRequest) -> JsonRpcResponse {
                 }
                 Some("send_gmail") => {
                     info!("📧 Calling send_gmail");
-                    let to = req.params.as_ref()
+                    let args = req.params.as_ref()
                         .and_then(|p| p.get("arguments"))
-                        .and_then(|a| a.get("to"))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    let subject = req.params.as_ref()
-                        .and_then(|p| p.get("arguments"))
-                        .and_then(|a| a.get("subject"))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("(no subject)")
-                        .to_string();
-                    let body_text = req.params.as_ref()
-                        .and_then(|p| p.get("arguments"))
-                        .and_then(|a| a.get("body"))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
+                        .cloned()
+                        .unwrap_or(json!({}));
 
-                    if to.is_empty() {
-                        JsonRpcResponse {
+                    match serde_json::from_value::<SendGmailRequest>(args) {
+                        Err(e) => JsonRpcResponse {
+                            jsonrpc: "2.0".to_string(),
+                            id: req.id,
+                            result: None,
+                            error: Some(JsonRpcError {
+                                code: -32602,
+                                message: format!("Invalid arguments: {}", e),
+                            }),
+                        },
+                        Ok(gmail_req) if gmail_req.to.is_empty() => JsonRpcResponse {
                             jsonrpc: "2.0".to_string(),
                             id: req.id,
                             result: None,
@@ -218,25 +213,26 @@ async fn handle_request(req: JsonRpcRequest) -> JsonRpcResponse {
                                 code: -32602,
                                 message: "Missing required parameter: to".to_string(),
                             }),
-                        }
-                    } else {
-                        match send_gmail_tool(&to, &subject, &body_text).await {
-                            Ok(result) => JsonRpcResponse {
-                                jsonrpc: "2.0".to_string(),
-                                id: req.id,
-                                result: Some(serde_json::to_value(result).unwrap_or(json!({}))),
-                                error: None,
-                            },
-                            Err(e) => {
-                                error!("send_gmail failed: {}", e);
-                                JsonRpcResponse {
+                        },
+                        Ok(gmail_req) => {
+                            match send_gmail_tool(&gmail_req.to, &gmail_req.subject, &gmail_req.body).await {
+                                Ok(result) => JsonRpcResponse {
                                     jsonrpc: "2.0".to_string(),
                                     id: req.id,
-                                    result: None,
-                                    error: Some(JsonRpcError {
-                                        code: -32603,
-                                        message: format!("Email send failed: {}", e),
-                                    }),
+                                    result: Some(serde_json::to_value(result).unwrap_or(json!({}))),
+                                    error: None,
+                                },
+                                Err(e) => {
+                                    error!("send_gmail failed: {}", e);
+                                    JsonRpcResponse {
+                                        jsonrpc: "2.0".to_string(),
+                                        id: req.id,
+                                        result: None,
+                                        error: Some(JsonRpcError {
+                                            code: -32603,
+                                            message: format!("Email send failed: {}", e),
+                                        }),
+                                    }
                                 }
                             }
                         }
