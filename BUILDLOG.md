@@ -21,6 +21,18 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
 
+## 2026-08-16 (TIC 1) — Visual redesign, stage 4
+
+**What shipped:** Rebuilt `static/index.html` from a plain functional page into a real designed surface, referenced against morphllm.com per Chris's brief (black ground, lime-green accent, dot-matrix "Silkscreen" display font, pill buttons, orbiting-node hero visual). Added a signature interaction: the hero orbit runs slow and green at idle, and accelerates + flares Rust-orange (`#CE422B`→`#F74C00`, the actual Rust-lang logo colors) the instant a tool is called, relaxing back to green when the response lands — dramatizing "Rust is fast" through motion tied to a real network call, not decoration. Added an explainer section (3 numbered cards: register it / agent calls a tool / real APIs real answer) after Chris flagged the page jumped straight to buttons with zero context for a first-time visitor.
+
+**Process note:** brief was fully pinned by the product owner (exact palette, motif, and signature interaction specified directly), so the full impeccable concept-seed/decision-page ceremony was skipped as unnecessary — built directly per "a brief-pinned direction beats the roll." Self-QA only (screenshots at desktop + mobile widths via chrome-cdp-ex, the color-shift interaction verified via forced CSS injection since the real network round-trip is too fast to catch on a manual screenshot), not the full subagent finish-reviewer/documenter pipeline — a deliberate scope call given this is a single static page, not a multi-surface product.
+
+**Detector:** `impeccable/scripts/detect.mjs` ran in degraded mode (missing optional npm parser deps) and flagged one "glowing shadow" warning — kept intentionally, since the glow is the exact effect from the referenced morphllm.com design, not accidental AI-slop.
+
+**Fixed during mobile QA:** the nav wrapped "agentic-rust-mcp" awkwardly next to the GitHub link at narrow widths — added a `@media (max-width: 480px)` rule to wrap the nav onto two rows instead.
+
+**Tests:** 5/5 passing (no Rust logic changed, HTML is compiled in via `include_str!`). Not yet deployed to Render as of this entry — pushing next.
+
 ## 2026-08-16 (TIC 1) — Docs accuracy pass, stage 3
 
 **What shipped:** Rewrote `README.md` — it previously claimed OAuth 2.1, 3 MCP resources, 3 reusable prompts, and a streaming task type, none of which exist anywhere in the source (confirmed via grep: zero matches for any of it). It also had a fabricated-looking performance table with suspiciously precise numbers never actually measured. Removed all of it; README now describes the real 4 tools, the real two-entry-point architecture (stdio + web demo), and links the live Render demo. Also fixed `docs/rust-mcp-integration.md` (part of the broader RAG-memory-architecture doc set), which had the same "OAuth/Logging complete" claim and described a never-built Gmail-API-draft-generation plan as "in progress" — corrected to describe what's actually shipped (direct SMTP send via `lettre`), confirmed as the intended design going forward, not an unfinished stand-in. Added the missing `GMAIL_USER`/`GMAIL_APP_PASSWORD`/`DEMO_MODE` entries to `.env.example`, which didn't have them despite both being required for real functionality.
