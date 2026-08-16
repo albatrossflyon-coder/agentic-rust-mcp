@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agentic-rust-mcp — live demo</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151c;
+    --border: #232836;
+    --text: #e6e9ef;
+    --muted: #8b93a7;
+    --accent: #5eead4;
+    --accent-dim: #1f6f63;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    padding: 2.5rem 1.5rem;
+  }
+  main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0 0 0.25rem; }
+  .sub { color: var(--muted); margin: 0 0 2rem; font-size: 0.9rem; }
+  .demo-badge {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  button .name { display: block; color: var(--accent); font-weight: 600; }
+  button .desc { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+  #gmail-form {
+    display: none;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  #gmail-form input, #gmail-form textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    padding: 0.5rem;
+    border-radius: 6px;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  #gmail-form textarea { resize: vertical; min-height: 4rem; }
+  pre {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    min-height: 3rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .placeholder { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>agentic-rust-mcp<span class="demo-badge">DEMO MODE</span></h1>
+  <p class="sub">A Rust MCP server exposing 4 tools over JSON-RPC. This page hits the same tool functions the MCP server calls — running against fixture data, not live accounts.</p>
+
+  <div class="grid">
+    <button data-tool="agency_pulse">
+      <span class="name">agency_pulse</span>
+      <span class="desc">Render + Vercel deployment status</span>
+    </button>
+    <button data-tool="content_check">
+      <span class="name">content_check</span>
+      <span class="desc">Buffer scheduled posts</span>
+    </button>
+    <button data-tool="data_vault">
+      <span class="name">data_vault</span>
+      <span class="desc">Firestore leads</span>
+    </button>
+    <button id="gmail-toggle">
+      <span class="name">send_gmail</span>
+      <span class="desc">Simulated send (no real email in demo mode)</span>
+    </button>
+  </div>
+
+  <div id="gmail-form">
+    <input id="gmail-to" placeholder="to (any address — nothing is actually sent)" value="recruiter@example.com">
+    <input id="gmail-subject" placeholder="subject" value="Test from agentic-rust-mcp demo">
+    <textarea id="gmail-body" placeholder="body">Hello from the live demo.</textarea>
+    <button data-tool="send_gmail">Send (simulated)</button>
+  </div>
+
+  <pre id="result"><span class="placeholder">Click a tool above to see its response.</span></pre>
+</main>
+
+<script>
+const resultEl = document.getElementById('result');
+const gmailForm = document.getElementById('gmail-form');
+
+document.getElementById('gmail-toggle').addEventListener('click', () => {
+  gmailForm.style.display = gmailForm.style.display === 'flex' ? 'none' : 'flex';
+});
+
+async function callTool(name, body) {
+  const buttons = document.querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
+  resultEl.textContent = `Calling ${name} ...`;
+  try {
+    const resp = await fetch(`/api/${name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    const data = await resp.json();
+    resultEl.textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    resultEl.textContent = `Error calling ${name}: ${err}`;
+  } finally {
+    buttons.forEach(b => b.disabled = false);
+  }
+}
+
+document.querySelectorAll('button[data-tool]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tool = btn.dataset.tool;
+    if (tool === 'send_gmail') {
+      callTool('send_gmail', {
+        to: document.getElementById('gmail-to').value,
+        subject: document.getElementById('gmail-subject').value,
+        body: document.getElementById('gmail-body').value,
+      });
+    } else {
+      callTool(tool);
+    }
+  });
+});
+</script>
+</body>
+</html>

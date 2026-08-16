@@ -8,8 +8,6 @@ repository = "https://github.com/albatrossflyon-coder/agentic-rust-mcp"
 license = "MIT"
 
 [dependencies]
-# MCP - Using rmcp (maintained Rust MCP SDK)
-rmcp = { version = "0.1", features = ["server", "transport-io"] }
 tokio = { version = "1.35", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -17,6 +15,9 @@ schemars = { version = "0.8", features = ["derive"] }
 
 # HTTP Client (for Render, Vercel, Buffer, Firestore)
 reqwest = { version = "0.12", features = ["json"] }
+
+# HTTP server for the public web demo (src/bin/web_server.rs)
+axum = "0.7"
 
 # Logging & Tracing
 tracing = "0.1"
