@@ -79,7 +79,14 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 
 ## Pending
 - [x] Deploy `web_server` to Render with `DEMO_MODE=true` and no other secrets set on that service — live at https://agentic-rust-mcp-demo.onrender.com
-- [ ] README accuracy pass
+- [x] README accuracy pass — done stages 3 + 5
+- [x] Real screenshot + Live Demo button on the repo's README — done stage 5
 - [ ] `content_check`/`data_vault` configuration-error distinction (needs a wire-format decision — see stage 2 entry)
+- [ ] Buffer: legacy REST API rejects "public API tokens" outright and is deprecated (sunsets 2027-02-01) — `content_check` needs a real migration to Buffer's GraphQL API, not a quick fix. New key wired into `.env` but unusable until migrated.
+- [ ] Firebase: `FIREBASE_PROJECT_ID`/`FIREBASE_API_KEY` not yet wired — Chris still locating them (Spark plan, no billing needed)
 - [ ] Wire into Omni Dashboard as a status panel
-- [ ] Confirm all 4 stages functional end-to-end against real accounts (stdio path)
+- [x] Render — confirmed real, live call verified
+- [x] Vercel — confirmed real, live call verified (also fixed 2 real bugs: wrong API version `v9`→`v6`, wrong field name `id`→`uid`)
+- [x] Gmail — confirmed real (send_gmail works against real Gmail SMTP)
+- [ ] Buffer — blocked, see above
+- [ ] Firebase — pending key

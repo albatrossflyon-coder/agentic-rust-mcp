@@ -78,11 +78,24 @@ pub struct VercelDeploymentsResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VercelDeployment {
+    #[serde(rename = "uid")]
     pub id: String,
     pub name: String,
-    pub state: String,
+    // ponytail: Vercel's schema marks `state` as legacy/optional and
+    // `readyState` as the guaranteed field; keep both and prefer `state`
+    // when present rather than requiring a field the API doesn't promise.
+    #[serde(default)]
+    pub state: Option<String>,
+    #[serde(default, rename = "readyState")]
+    pub ready_state: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: i64,
+}
+
+impl VercelDeployment {
+    pub fn effective_state(&self) -> Option<&str> {
+        self.state.as_deref().or(self.ready_state.as_deref())
+    }
 }
 
 // Buffer API response
@@ -161,7 +174,7 @@ pub async fn agency_pulse() -> Result<DeploymentStatus> {
     if !vercel_token.is_empty() {
         match query_vercel_deployments(&vercel_token).await {
             Ok(deploys) => {
-                if !deploys.is_empty() && deploys[0].state == "READY" {
+                if !deploys.is_empty() && deploys[0].effective_state() == Some("READY") {
                     vercel_status = "live".to_string();
                 } else {
                     vercel_status = "deploying".to_string();
@@ -217,7 +230,7 @@ async fn query_vercel_deployments(token: &str) -> Result<Vec<VercelDeployment>> 
         .timeout(Duration::from_secs(10))
         .build()?;
     let resp = client
-        .get("https://api.vercel.com/v9/deployments")
+        .get("https://api.vercel.com/v6/deployments")
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
