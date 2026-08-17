@@ -27,7 +27,9 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 
 **README hero:** replaced the generic decorative capsule-render banner with a real screenshot of the live deployed demo page (`docs/images/demo-hero.png`), plus a prominent Live Demo link/button right under it.
 
-**Open:** Vercel/Buffer keys still needed for `agency_pulse`'s Vercel half and all of `content_check` to go live (Chris's to get). Firebase-vs-Supabase for `data_vault`'s real backend is an open question — not yet decided.
+**Update, same day:** Vercel token acquired and wired in — found 2 real bugs in the process (wrong API version, wrong field name; see the stage above this one), fixed, verified against the real API, added to the MCP registration's `env`. Release binary rebuilt with the fix. Buffer key also acquired but the tool it's for is blocked on a real API migration (Buffer's legacy REST API rejects the key type outright, deprecated 2027-02-01) — key is wired into `.env` for whenever that migration happens, not yet functional. Firebase still pending — Chris locating `FIREBASE_PROJECT_ID`/`FIREBASE_API_KEY` (Firebase Console → Project Settings → General; Spark plan confirmed, no billing needed).
+
+**Known nice-to-have, not urgent:** the README hero is a static PNG, so it can't show the live page's actual motion (orbit spin, rust-color shift on tool calls) the way other repos' animated landing-page previews do. Swapping it for a GIF/short clip would fix that — deferred, not built this session.
 
 ## 2026-08-16 (TIC 1) — Visual redesign, stage 4
 
