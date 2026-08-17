@@ -21,6 +21,18 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
 
+## 2026-08-17 (TIC 1) — configuration_error wire-format fix, stage 6
+
+**What shipped:** `content_check` (Buffer) and `data_vault` (Firestore) now report `configuration_error`/`failed`/`live` status, matching `agency_pulse`'s existing pattern — resolves the wire-format judgment call flagged as deferred in stage 2. `data_vault` changed from a bare `Vec<FirestoreLead>` to `DataVaultResponse{leads, status}`; additive shape, no consumer parses it by field so `main.rs`/`web_server.rs`/`static/index.html` needed no changes. `DEMO_MODE` fixture behavior for both tools is unchanged.
+
+**Security scan (vuln-hunter scan_diff):** clean, 0 findings.
+
+**Simplification review (ponytail-review):** nothing to cut — diff mirrors `agency_pulse`'s existing pattern.
+
+**Tests:** 5/5 passing, including a new test proving both tools report `configuration_error` in real mode without credentials. Found and fixed a real test race in the process: a second `#[tokio::test]` mutating the same process-global `DEMO_MODE`/`BUFFER_API_KEY`/`FIREBASE_*` env vars concurrently with the existing demo-mode test caused an intermittent failure (`agency_pulse` read `demo_mode() == false` mid-test) — consolidated into one sequential test per this file's own established convention.
+
+**Firebase/Buffer:** still not wired with real credentials — deliberately out of scope, Chris's call. `configuration_error` is now the honest status until/unless that changes.
+
 ## 2026-08-16 (TIC 1) — Registration + README hero, stage 5
 
 **Registered as a live MCP server:** built a release binary (`cargo build --release`), added `agentic-rust-mcp` to `~/.claude.json`'s global `mcpServers` block (`command` points at the release exe directly, `env` carries `GMAIL_USER`/`GMAIL_APP_PASSWORD`/`RENDER_API_KEY` — the 3 real credentials so far). Smoke-tested with the exact env the config passes: `initialize` handshake succeeded, and `agency_pulse` made a **real** call to the live Render API and got back `"status":"deploying"` — genuine data, not a fixture. Needs a Claude Code restart to actually load (config changes aren't picked up mid-session, same as every other custom MCP server here).
@@ -83,10 +95,10 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - [x] Deploy `web_server` to Render with `DEMO_MODE=true` and no other secrets set on that service — live at https://agentic-rust-mcp-demo.onrender.com
 - [x] README accuracy pass — done stages 3 + 5
 - [x] Real screenshot + Live Demo button on the repo's README — done stage 5
-- [ ] `content_check`/`data_vault` configuration-error distinction (needs a wire-format decision — see stage 2 entry)
-- [ ] Buffer: legacy REST API rejects "public API tokens" outright and is deprecated (sunsets 2027-02-01) — `content_check` needs a real migration to Buffer's GraphQL API, not a quick fix. New key wired into `.env` but unusable until migrated.
-- [ ] Firebase: `FIREBASE_PROJECT_ID`/`FIREBASE_API_KEY` not yet wired — Chris still locating them (Spark plan, no billing needed)
-- [ ] Wire into Omni Dashboard as a status panel
+- [x] `content_check`/`data_vault` configuration-error distinction — done stage 6
+- [ ] Buffer: legacy REST API rejects "public API tokens" outright and is deprecated (sunsets 2027-02-01) — deferred by Chris's call 2026-08-17; either migrate `content_check` to Buffer's GraphQL API or swap to a different scheduler provider, not urgent, no real use case blocking on it yet.
+- [ ] Firebase: `FIREBASE_PROJECT_ID`/`FIREBASE_API_KEY` not yet wired — deferred by Chris's call 2026-08-17, only needed once there's real lead data to manage
+- [ ] Wire into Omni Dashboard as a status panel — deprioritized by Chris's call 2026-08-17
 - [x] Render — confirmed real, live call verified
 - [x] Vercel — confirmed real, live call verified (also fixed 2 real bugs: wrong API version `v9`→`v6`, wrong field name `id`→`uid`)
 - [x] Gmail — confirmed real (send_gmail works against real Gmail SMTP)

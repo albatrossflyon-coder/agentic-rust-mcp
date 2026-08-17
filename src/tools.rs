@@ -24,6 +24,7 @@ pub struct BufferPost {
     pub scheduled_posts: u32,
     pub pending_approval: u32,
     pub next_post_time: String,
+    pub status: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,6 +33,18 @@ pub struct FirestoreLead {
     pub name: String,
     pub email: String,
     pub created_at: String,
+}
+
+// data_vault previously returned a bare Vec<FirestoreLead>, making a missing
+// FIREBASE_PROJECT_ID/FIREBASE_API_KEY indistinguishable from a genuinely
+// empty leads collection. Wrapping it mirrors agency_pulse's status field —
+// additive (new object shape instead of a bare array), no consumer parses
+// the old shape by field (main.rs/web_server.rs both serialize generically,
+// static/index.html just stringifies the response for display).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DataVaultResponse {
+    pub leads: Vec<FirestoreLead>,
+    pub status: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -248,6 +261,7 @@ pub async fn content_check() -> Result<BufferPost> {
             scheduled_posts: 12,
             pending_approval: 3,
             next_post_time: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+            status: "live".to_string(),
         });
     }
 
@@ -256,8 +270,13 @@ pub async fn content_check() -> Result<BufferPost> {
     let mut scheduled_posts = 0u32;
     let mut pending_approval = 0u32;
     let next_post_time = "N/A".to_string();
+    let status;
 
-    if !buffer_key.is_empty() {
+    if buffer_key.is_empty() {
+        // ponytail: no key configured — distinct from a real empty account,
+        // same reasoning as agency_pulse's configuration_error.
+        status = "configuration_error".to_string();
+    } else {
         match query_buffer_profiles(&buffer_key).await {
             Ok(profiles) => {
                 for profile in profiles {
@@ -270,8 +289,12 @@ pub async fn content_check() -> Result<BufferPost> {
                         }
                     }
                 }
+                status = "live".to_string();
             }
-            Err(e) => tracing::warn!("Buffer API error: {}", e),
+            Err(e) => {
+                tracing::warn!("Buffer API error: {}", e);
+                status = "failed".to_string();
+            }
         }
     }
 
@@ -280,6 +303,7 @@ pub async fn content_check() -> Result<BufferPost> {
         scheduled_posts,
         pending_approval,
         next_post_time,
+        status,
     })
 }
 
@@ -314,43 +338,54 @@ async fn query_buffer_schedule(token: &str, profile_id: &str) -> Result<Vec<Buff
     Ok(body.updates)
 }
 
-pub async fn data_vault() -> Result<Vec<FirestoreLead>> {
+pub async fn data_vault() -> Result<DataVaultResponse> {
     dotenv::dotenv().ok();
 
     if demo_mode() {
         let now = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        return Ok(vec![
-            FirestoreLead {
-                id: "demo-lead-1".to_string(),
-                name: "Jordan Lee".to_string(),
-                email: "jordan.lee@example.com".to_string(),
-                created_at: now.clone(),
-            },
-            FirestoreLead {
-                id: "demo-lead-2".to_string(),
-                name: "Priya Nair".to_string(),
-                email: "priya.nair@example.com".to_string(),
-                created_at: now,
-            },
-        ]);
+        return Ok(DataVaultResponse {
+            leads: vec![
+                FirestoreLead {
+                    id: "demo-lead-1".to_string(),
+                    name: "Jordan Lee".to_string(),
+                    email: "jordan.lee@example.com".to_string(),
+                    created_at: now.clone(),
+                },
+                FirestoreLead {
+                    id: "demo-lead-2".to_string(),
+                    name: "Priya Nair".to_string(),
+                    email: "priya.nair@example.com".to_string(),
+                    created_at: now,
+                },
+            ],
+            status: "live".to_string(),
+        });
     }
-
 
     let project_id = std::env::var("FIREBASE_PROJECT_ID").unwrap_or_default();
     let api_key = std::env::var("FIREBASE_API_KEY").unwrap_or_default();
 
     let mut leads = Vec::new();
+    let status;
 
-    if !project_id.is_empty() && !api_key.is_empty() {
+    if project_id.is_empty() || api_key.is_empty() {
+        // ponytail: no creds configured — distinct from a real empty
+        // Firestore collection, same reasoning as agency_pulse/content_check.
+        status = "configuration_error".to_string();
+    } else {
         match query_firestore(&project_id, &api_key, "leads").await {
             Ok(docs) => {
                 leads = docs;
+                status = "live".to_string();
             }
-            Err(e) => tracing::warn!("Firestore API error: {}", e),
+            Err(e) => {
+                tracing::warn!("Firestore API error: {}", e);
+                status = "failed".to_string();
+            }
         }
     }
 
-    Ok(leads)
+    Ok(DataVaultResponse { leads, status })
 }
 
 async fn query_firestore(project_id: &str, api_key: &str, collection: &str) -> Result<Vec<FirestoreLead>> {
@@ -451,6 +486,7 @@ mod tests {
             scheduled_posts: 5,
             pending_approval: 1,
             next_post_time: "2024-01-01 10:00:00".to_string(),
+            status: "live".to_string(),
         };
         let json = serde_json::to_string(&post).unwrap();
         assert!(json.contains("Twitter"));
@@ -485,10 +521,29 @@ mod tests {
 
         let post = content_check().await.unwrap();
         assert!(post.channel.contains("Demo"));
+        assert_eq!(post.status, "live");
 
-        let leads = data_vault().await.unwrap();
-        assert_eq!(leads.len(), 2);
+        let vault = data_vault().await.unwrap();
+        assert_eq!(vault.leads.len(), 2);
+        assert_eq!(vault.status, "live");
 
         std::env::remove_var("DEMO_MODE");
+
+        // Same test fn, run sequentially after the demo-mode assertions
+        // above, rather than a separate #[tokio::test] — a second fn
+        // mutating DEMO_MODE/BUFFER_API_KEY/FIREBASE_* concurrently with
+        // this one raced under the default parallel test runner (caught by
+        // an actual failing run, not theorized).
+        std::env::remove_var("BUFFER_API_KEY");
+        std::env::remove_var("FIREBASE_PROJECT_ID");
+        std::env::remove_var("FIREBASE_API_KEY");
+
+        let post = content_check().await.unwrap();
+        assert_eq!(post.status, "configuration_error");
+        assert_eq!(post.scheduled_posts, 0);
+
+        let vault = data_vault().await.unwrap();
+        assert_eq!(vault.status, "configuration_error");
+        assert!(vault.leads.is_empty());
     }
 }
