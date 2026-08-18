@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/demo-hero.png" alt="agentic-rust-mcp live demo — a black-and-green terminal-style landing page with an orbiting-node hero visual" width="100%"/>
+  <img src="docs/images/demo-hero.gif" alt="agentic-rust-mcp live demo — the orbiting-node hero visual idle in green, then flaring Rust-orange and spinning fast during a live tool call before relaxing back to green" width="100%"/>
 </p>
 
 <p align="center">

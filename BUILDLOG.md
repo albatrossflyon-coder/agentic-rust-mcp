@@ -21,6 +21,14 @@ A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI age
 - Phase: stdio MCP server working as before; public web demo (stages 1+2) built, security-scanned, code-reviewed, locally verified, and deployed live.
 - Not yet wired into Omni Dashboard as a panel.
 
+## 2026-08-18 (TIC 1), 1:56 PM CDT — README hero swapped from static PNG to animated GIF
+
+**What shipped:** Replaced `docs/images/demo-hero.png` (static screenshot) with `docs/images/demo-hero.gif` (230KB), showing the real idle→flare→idle cycle — the hero orbit's signature interaction (slow green spin at idle, fast Rust-orange spin during a live tool call, relaxing back to green) — which a static frame couldn't show at all. Closes the "known nice-to-have" flagged in stage 5 (2026-08-16). Also closes a standing mailbox item: this was the 2nd time in one night (2026-08-17) a repo shipped a static screenshot for a page whose whole point is motion — rag-system hit the same issue first, this was the other flagged repo.
+
+**How it was captured:** loaded the live Render demo (`agentic-rust-mcp-demo.onrender.com`, had to wait out a free-tier cold start) via Playwright, confirmed the flare is driven by a plain DOM class toggle (`#orbit-stage.accelerating`, in `static/index.html`) rather than anything tied to real request timing. Toggled that class directly via `page.evaluate` while staying scrolled to the hero — more reliable than clicking the real tool button and racing the actual (short, ~200-500ms) fetch round-trip. Captured 8 frames (2 idle, 4 flare at different rotation angles, 2 settle) at hand-picked intervals, cropped to the hero region, assembled with `ffmpeg` (`palettegen`/`paletteuse`, `-loop 0`) — same pattern as rag-system's `docs/landing-page-demo.gif`.
+
+**Not code:** static-asset + one README `<img>` line change, no Rust/logic touched — no rebuild/retest/security-scan needed for this pass (consistent with how the stage-3 docs-only pass was logged).
+
 ## 2026-08-17 (TIC 1) — configuration_error wire-format fix, stage 6
 
 **What shipped:** `content_check` (Buffer) and `data_vault` (Firestore) now report `configuration_error`/`failed`/`live` status, matching `agency_pulse`'s existing pattern — resolves the wire-format judgment call flagged as deferred in stage 2. `data_vault` changed from a bare `Vec<FirestoreLead>` to `DataVaultResponse{leads, status}`; additive shape, no consumer parses it by field so `main.rs`/`web_server.rs`/`static/index.html` needed no changes. `DEMO_MODE` fixture behavior for both tools is unchanged.
