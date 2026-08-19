@@ -2,6 +2,13 @@
 
 MCP server built in Rust, plus a public HTTP demo wrapper.
 
+## Tech Stack
+
+- **Languages**: Rust
+- **Frameworks/Libraries**: tokio, axum, serde/serde_json, reqwest, tracing, lettre, chrono
+- **Cloud/Hosting**: Fly.io
+- **AI/ML**: MCP Protocol
+
 ## What This Is
 A Model Context Protocol (MCP) server written in Rust. Exposes tools that AI agents can call to run automated workflows, plus a separate public-facing web demo so a recruiter/employer can test-drive it from a browser without an MCP client.
 
